@@ -352,7 +352,7 @@ Now, if you run `npm test` in your terminal, you should get the following error 
 
 So, to recap, we have now set up our Express app, our MySQL database (inside its Docker container) and we've set up Sequelize to communicate between our app and the database. We've also set up dotenv to help us when creating/connecting to our database and nodemon to save us the hassle of refreshing our app every time we make a change as we're building it. Additionally, we've set up a testing framework, ready to test our app's functionality as we build it, using a combination of Mocha, Chai and Supertest. Phew! Well done us :)  
 
-### The next part -  adding tables to our database
+### The next part -  setting up the tests
 
 Our database is a book library. It's going to hold information about a few things: books (obviously), as well as users or 'readers' who can borrow books and lenders who can loan out books.
 
@@ -418,6 +418,10 @@ describe("POST /readers", async () => {
 This is what a test looks like using Mocha syntax. We begin with the `describe` part, which takes a description of what we're testing (in our case, we want to test a http POST request to a url with /readers as the endpoint), plus a callback function. Then the `it` block has a description of what we expect our test to do in plain English. Then we use the supertest `request` functionality to fire up a version of our `app`. We then send a post request with an object containing the data we want stored in the readers table of our database. These values could be any strings you like. Finally, we use Chai's `expect` functionality to check that that all worked correctly.
 
 If you run the test now, using `npm test` you should see that the test runs but fails (as expected!).
+
+### Adding tables to our database
+
+So we've set up the test to check whether a new reader gets added to our database when we send a POST request to a specific url endpoint. 
 
 
 Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone)
