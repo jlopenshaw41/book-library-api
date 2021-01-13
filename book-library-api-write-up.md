@@ -281,7 +281,7 @@ const setupDatabase = () => {
     return {};
 };
 
-module.exports = setupDatabase;
+module.exports = setupDatabase();
 ```
 
 So what's going on here? (If you don't really want to know, just move on to the next step, I won't tell anyone) Remember we talked at the beginning about using an ORM (Object Relational Mapper) called Sequelize? Well an ORM is a tool that sits between our app and our database and allows us to communicate with it using JavaScript (in our case) to query and manipulate the data in our database. Just like we did with Express earlier, we 'require' Sequelize into our index.js file, which then enables us to make use of Sequelize and the handy features it has.
@@ -380,10 +380,10 @@ Now we've got access to all the bits we need to write and run tests, we're going
 Paste the following code into your `reader.test.js` file, below the require statements:
 
 ``` javascript
-describe('/artists', () => {
+describe("/readers", () => {
   before(async () => {
     try {
-      await Artist.sequelize.sync();
+      await Reader.sequelize.sync();
     } catch (err) {
       console.log(err);
     }
@@ -391,11 +391,12 @@ describe('/artists', () => {
 
   beforeEach(async () => {
     try {
-      await Artist.destroy({ where: {} });
+      await Reader.destroy({ where: {} });
     } catch (err) {
       console.log(err);
     }
   });
+});
 ```
 
 This code makes use of two bits of Mocha functionality - 'before', and 'beforeEach'. The 'before' block of code will automatically run before all of the tests in the file. This particular block of code creates a new instance of our database to perform tests on. Then, so that we start with a blank database for each individual test, the 'beforeEach' block of code clears out the database.
@@ -407,20 +408,17 @@ describe("POST /readers", async () => {
     const response = await request(app).post("/readers").send({
       name: "Mia Corvere",
       email: "mia@redchurch.com",
-      password: "neverflinch",
     });
 
     await expect(response.status).to.equal(201);
     expect(response.body.name).to.equal("Mia Corvere");
     expect(response.body.email).to.equal("mia@redchurch.com");
-    expect(response.body.password).to.equal("neverflinch");
 
     const newReaderRecord = await Reader.findByPk(response.body.id, {
       raw: true,
     });
     expect(newReaderRecord.name).to.equal("Mia Corvere");
     expect(newReaderRecord.email).to.equal("mia@redchurch.com");
-    expect(newReaderRecord.password).to.equal("neverflinch");
   });
 });
 ```
@@ -448,16 +446,15 @@ module.exports = (connection, DataTypes) => {
   const schema = {
     name: DataTypes.STRING,
     email: DataTypes.STRING,
-    password: DataTypes.STRING,
   };
 
   const ReaderModel = connection.define("Reader", schema);
   return ReaderModel;
 };
 ```
-As it says in their [documentation](https://sequelize.org/master/manual/model-basics.html), "models are the essence of Sequelize". Each model represents a table in our database - in this case, the 'readers' table. This code defines what our sequelize model, and therefore the corresponding table in our MySQL database, will look like. It is standard Sequelize syntax for defining a model. Above, we tell it that our readers table should be called 'readers' and have 'name', 'email' and 'password' columns (an 'id' column with a unique id number will also be automatically generated).
+As it says in their [documentation](https://sequelize.org/master/manual/model-basics.html), "models are the essence of Sequelize". Each model represents a table in our database - in this case, the 'readers' table. This code defines what our sequelize model, and therefore the corresponding table in our MySQL database, will look like. It is standard Sequelize syntax for defining a model. Above, we tell it that our readers table should be called 'readers' and have 'name' and 'email' columns (an 'id' column with a unique id number will also be automatically generated).
 
-3. Next, we need to add some code to our `models/index.js` file so that the reader model/table gets added to the database. First we import our reader model in, then after the existing setupDatabase code has run, we create a new variable called Reader and pull in that model function we just created, passing in our connection plus Sequelize, then the sync runs, before returning our Reader. Amend or paste the follwing code so your `models/index.js` file looks like this:
+3. Next, we need to add some code to our `models/index.js` file so that the reader model/table gets added to the database. First we import our reader model in, then after the existing setupDatabase code has run, we create a new variable called Reader and pull in that model function we just created, passing in our connection plus Sequelize, then the sync runs, before returning our Reader. Amend or paste the following code so your `models/index.js` file looks like this:
 
 ``` javascript
 const Sequelize = require('sequelize');

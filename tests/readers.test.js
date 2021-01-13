@@ -26,19 +26,16 @@ describe("POST /readers", async () => {
     const response = await request(app).post("/readers").send({
       name: "Mia Corvere",
       email: "mia@redchurch.com",
-      password: "neverflinch",
     });
 
     await expect(response.status).to.equal(201);
     expect(response.body.name).to.equal("Mia Corvere");
     expect(response.body.email).to.equal("mia@redchurch.com");
-    expect(response.body.password).to.equal("neverflinch");
 
     const newReaderRecord = await Reader.findByPk(response.body.id, {
       raw: true,
     });
     expect(newReaderRecord.name).to.equal("Mia Corvere");
     expect(newReaderRecord.email).to.equal("mia@redchurch.com");
-    expect(newReaderRecord.password).to.equal("neverflinch");
   });
 });

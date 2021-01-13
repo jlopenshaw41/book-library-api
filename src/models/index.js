@@ -16,8 +16,8 @@ const setupDatabase = () => {
     connection.sync({ alter: true });
 
     return {
-        Reader
+        Reader,
     };
 };
 
-module.exports = setupDatabase;
+module.exports = setupDatabase();
