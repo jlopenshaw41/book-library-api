@@ -1,4 +1,4 @@
-This week at bootcamp, I built a REST API using Express, Sequelize and MySQL. You may be interested to know how I went about creating the API and might even want to give it a go yourself; here's a write-up/walkthrough walking through the process step by step.
+This week at bootcamp, I built a REST API using Express, Sequelize and MySQL. You may be interested to know how I went about creating the API and might even want to give it a go yourself; here's a write-up which walks through the process step by step.
 
 This project consists of three main parts - a database, an Express app and an ORM  (Object Relational Mapper) that sits between the two, called Sequelize.
 ### Create a new folder for the project and set up a GitHub repo
@@ -286,6 +286,68 @@ So what's going on here? (If you don't really want to know, just move on to the 
 
 The next line in the code we just pasted (`const { DB_NAME, ...` etc) is to do with dotenv and the configuration info we stored in our .env file earlier. Behind the scenes, dotenv has taken the variables we wrote in our .env file and has loaded them into something called `process.env`. This line of code is then grabbing that info from `process.env` and storing it in new variables called `DB_NAME`, `DB_USER` etc in this index.js file, for us to use in a second when we connect to the database. (`process.env` is a bit beyond the remit of this blog post, but essentially it is a variable created by node when you start your application. It holds all sorts of info, including - thanks to dotenv - our config info. If you're curious, put `console.log(process.env)` in your app.js and start your app if it's not already running to see what sort of info is stored in `process.env`).
 
-Next, we've written a function called `setupDatabase`, which creates a new instance of Sequelize, passing in those configuration variables. We need a Sequelize instance to connect to our database, that's how it works. This code is the [standard way of setting up a new sequelize instance](https://sequelize.org/master/manual/getting-started.html) to connect to a database. The `dialect` line tells it we're using a MySQL database (as opposed to a postgres database, or a mariaDB database etc) and the `logging` line tells Sequelize that we don't want it to log every SQL query it performs when it is talking to the database on our behalf (because our database is a MySQL database, it only understands the SQL language, but Sequelize allows us to write our instructions using JavaScript, and it then converts it into SQL behind the scenes). Last but not least, the `connection.sync` line tells Sequelize to check whether the existing database tables look the same as the models we've set up in our code, and to alter them if not, every time it connects. 
+Next, we've written a function called `setupDatabase`, which creates a new instance of Sequelize, passing in those configuration variables. We need a Sequelize instance to connect to our database, that's how it works. This code is one of the [standard ways of setting up a new sequelize instance](https://sequelize.org/master/manual/getting-started.html) to connect to a database. The `dialect` line tells it we're using a MySQL database (as opposed to a postgres database, or a mariaDB database etc) and the `logging` line tells Sequelize that we don't want it to log every SQL query it performs when it is talking to the database on our behalf (because our database is a MySQL database, it only understands the SQL language, but Sequelize allows us to write our instructions using JavaScript, and it then converts it into SQL behind the scenes). Last but not least, the `connection.sync` line tells Sequelize to check whether the existing database tables look the same as the models we've set up in our code, and to alter them if not, every time it connects.
+
+### Set up the tests
+
+We're going to use a combination of three testing tools - Mocha, Chai and Supertest to write tests for our API as we write it. 
+
+1. Install mocha, chai and supertest as development dependencies
+
+`$ npm install --save-dev mocha chai supertest`
+
+2. Create a new folder called 'tests' and create a new file in that folder called 'test-setup.js'
+
+`$ mkdir tests`
+`$ cd tests`
+`$ touch test-setup.js`
+
+3. Copy the following code into your new 'test-setup.js' file:
+
+```
+const dotenv = require("dotenv");
+
+dotenv.config({ path: "./.env.test" });
+```
+
+This code makes sure that dotenv reloads our configuration variables to process.env (because behind the scenes, we start a new process each time we run our test script so our environmental get reset and need loading again).
+
+4. In the main project folder, create a new file called '.env.test'
+
+`$ touch .env.test`
+
+5.Copy the code from your `.env` file and paste it into that new `.env.test` file, but be sure to change the database name to something else e.g.
+
+```
+DB_PASSWORD=password123
+DB_NAME=book_library_mysql_test
+DB_USER=root
+DB_HOST=localhost
+DB_PORT=3307
+```
+
+6. Add `.env.test` to your `.gitignore` file
+
+7. In your `package.json` file, update the "test" script to:
+
+`"test": "mocha tests/**/*.test.js",`
+
+And add the following new "pretest" script:
+
+`"pretest": "node scripts/create-database.js test"`
+
+Finally, add a "posttest" script too:
+
+`"posttest": "node scripts/drop-database.js"`
+
+These pre and post test scripts will automatically run before and after we run our tests, to create a new database and then delete it afterwards, so that we're testing a fresh database each time. 
+
+Now, if you run `npm test` in your terminal, you should get the following error message (which is correct, because we haven't written our tests yet!):
+
+`Error: No test files found: "tests/**/*.test.js"`
+
+### Recap
+
+So, to recap, we have now set up our Express app, our MySQL database (inside its Docker container) and we've set up Sequelize to communicate between our app and the database. We've also set up dotenv to help us when creating/connecting to our database and nodemon to save us the hassle of refreshing our app every time we make a change as we're building it. Additionally, we've set up a testing framework, ready to test our app's functionality as we build it, using a combination of Mocha, Chai and Supertest. Phew! Well done us :)  
 
 Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone!)
