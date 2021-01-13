@@ -54,11 +54,11 @@ If you haven't already installed Docker on your machine, visit their [website](h
 
 1. Run the following command to set up a new Docker MySQL container with a new database called 'book_library_mysql' then check it is running - you should see the container listed after running `docker ps`:
 
-`$ docker run -d -p 3307:3306 --name book_library -e MYSQL_ROOT_PASSWORD=secret mysql` (Change the password to your own :) ) 
+`$ docker run -d -p 3307:3306 --name book_library_mysql -e MYSQL_ROOT_PASSWORD=secret mysql` (Change the password to your own :) ) 
 
 `$ docker ps`
 
-2. Open MySQL Workbench, add a new MySQL Connection and configure the settings in the pop up window (I entered a name for the database and had to change the port to 3307 to make it work and I added my password to the keychain).
+2. Open MySQL Workbench, add a new MySQL Connection (click the little plus next to MySQL Connections) and configure the settings in the pop up window (I entered a name for the database and had to change the port to 3307 to make it work and I added my password to the keychain).
 
 ![MySQL Workbench setup screenshot]()
 
@@ -411,6 +411,16 @@ describe("POST /readers", async () => {
     });
 
     await expect(response.status).to.equal(201);
+    expect(response.body.name).to.equal("Mia Corvere");
+    expect(response.body.email).to.equal("mia@redchurch.com");
+    expect(response.body.password).to.equal("neverflinch");
+
+    const newReaderRecord = await Reader.findByPk(response.body.id, {
+      raw: true,
+    });
+    expect(newReaderRecord.name).to.equal("Mia Corvere");
+    expect(newReaderRecord.email).to.equal("mia@redchurch.com");
+    expect(newReaderRecord.password).to.equal("neverflinch");
   });
 });
 ```
@@ -421,7 +431,59 @@ If you run the test now, using `npm test` you should see that the test runs but 
 
 ### Adding tables to our database
 
-So we've set up the test to check whether a new reader gets added to our database when we send a POST request to a specific url endpoint. 
+So we've set up the test to check whether a new reader gets added to our database when we send a POST request to a specific url endpoint.
+
+Now we need to write the code that actually makes that happen. 
+
+First, we need to create a table in our database to hold info about readers. We do  think using sequelize and something called models.
+
+1. In your models folder, create a new file called 'reader.js':
+
+`$ touch reader.js`
+
+2. Paste the following code into that new file:
+
+``` javascript
+module.exports = (connection, DataTypes) => {
+  const schema = {
+    name: DataTypes.STRING,
+    email: DataTypes.STRING,
+    password: DataTypes.STRING,
+  };
+
+  const ReaderModel = connection.define("Reader", schema);
+  return ReaderModel;
+};
+```
+As it says in their [documentation](https://sequelize.org/master/manual/model-basics.html), "models are the essence of Sequelize". Each model represents a table in our database - in this case, the 'readers' table. This code defines what our sequelize model, and therefore the corresponding table in our MySQL database, will look like. It is standard Sequelize syntax for defining a model. Above, we tell it that our readers table should be called 'readers' and have 'name', 'email' and 'password' columns (an 'id' column with a unique id number will also be automatically generated).
+
+3. Next, we need to add some code to our `models/index.js` file so that the reader model/table gets added to the database. First we import our reader model in, then after the existing setupDatabase code has run, we create a new variable called Reader and pull in that model function we just created, passing in our connection plus Sequelize, then the sync runs, before returning our Reader. Amend or paste the follwing code so your `models/index.js` file looks like this:
+
+``` javascript
+const Sequelize = require('sequelize');
+const ReaderModel = require('./reader');
+
+const { DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT } = process.env;
+
+const setupDatabase = () => {
+    const connection = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
+        host: DB_HOST,
+        port: DB_PORT,
+        dialect: "mysql",
+        logging: false,
+    });
+
+    const Reader = ReaderModel(connection, Sequelize);
+
+    connection.sync({ alter: true });
+
+    return {
+        Reader
+    };
+};
+
+module.exports = setupDatabase;
+```
 
 
 Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone)
