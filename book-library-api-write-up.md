@@ -332,7 +332,7 @@ DB_PORT=3307
 
 7. In your `package.json` file, update the "test" script to:
 
-`"test": "mocha tests/**/*.test.js",`
+`"test": "mocha tests/**/*.js --exit --recursive --timeout 30000 --file ./tests/test-setup.js",`
 
 And add the following new "pretest" script:
 
@@ -352,4 +352,72 @@ Now, if you run `npm test` in your terminal, you should get the following error 
 
 So, to recap, we have now set up our Express app, our MySQL database (inside its Docker container) and we've set up Sequelize to communicate between our app and the database. We've also set up dotenv to help us when creating/connecting to our database and nodemon to save us the hassle of refreshing our app every time we make a change as we're building it. Additionally, we've set up a testing framework, ready to test our app's functionality as we build it, using a combination of Mocha, Chai and Supertest. Phew! Well done us :)  
 
-Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone!)
+### The next part -  adding tables to our database
+
+Our database is a book library. It's going to hold information about a few things: books (obviously), as well as users or 'readers' who can borrow books and lenders who can loan out books.
+
+First things first, before we write any more code, we're going to write a test or two. The basic principle we are following here is to begin by writing a test to test that our app does whatever particular task we want it to do, then we're going to run that test and check that it fails (of course it will, we haven't written the code to perform the particular task yet), THEN we're going to write the code that performs that task and check that our test now passes. This is following the principles of Test Driven Development (or TDD), which you can [read more about here](link to my blog post).
+
+1. In your tests folder, create a new file called 'readers.test.js'
+
+`$ touch readers.test.js`
+
+2. Paste the following code into your readers.test.js file:
+
+```
+const { Reader } = require("../src/models");
+const { expect } = require("chai");
+const request = require("supertest");
+const app = require("../src/app");
+```
+
+This 'requires' in a reader model (which we'll get to in a minute), the Chai testing functionality (in particular a piece of functionality that's been pre-written for us called 'expect'), supertest (which we use because it creates a test server for us so we can properly test our API) and finally, our good old Express app that we created earlier.
+
+Now we've got access to all the bits we need to write and run tests, we're going to write the actual tests themselves.
+
+3. The testing framework we're using for this project is Mocha. The code below is all mocha syntax. (Incidentally, it's pretty similar to Jest, another JavaScript testing framework.)
+
+Paste the following code into your `reader.test.js` file, below the require statements:
+
+``` javascript
+describe('/artists', () => {
+  before(async () => {
+    try {
+      await Artist.sequelize.sync();
+    } catch (err) {
+      console.log(err);
+    }
+  });
+
+  beforeEach(async () => {
+    try {
+      await Artist.destroy({ where: {} });
+    } catch (err) {
+      console.log(err);
+    }
+  });
+```
+
+This code makes use of two bits of Mocha functionality - 'before', and 'beforeEach'. The 'before' block of code will automatically run before all of the tests in the file. This particular block of code creates a new instance of our database to perform tests on. Then, so that we start with a blank database for each individual test, the 'beforeEach' block of code clears out the database.
+
+4. Finally, we're going to add our first test. Paste the following code into readers.test.js, below everything else you've just added:
+``` javascript
+describe("POST /readers", async () => {
+  it("creates a new reader in the database", async () => {
+    const response = await request(app).post("/readers").send({
+      name: "Mia Corvere",
+      email: "mia@redchurch.com",
+      password: "neverflinch",
+    });
+
+    await expect(response.status).to.equal(201);
+  });
+});
+```
+
+This is what a test looks like using Mocha syntax. We begin with the `describe` part, which takes a description of what we're testing (in our case, we want to test a http POST request to a url with /readers as the endpoint), plus a callback function. Then the `it` block has a description of what we expect our test to do in plain English. Then we use the supertest `request` functionality to fire up a version of our `app`. We then send a post request with an object containing the data we want stored in the readers table of our database. These values could be any strings you like. Finally, we use Chai's `expect` functionality to check that that all worked correctly.
+
+If you run the test now, using `npm test` you should see that the test runs but fails (as expected!).
+
+
+Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone)
