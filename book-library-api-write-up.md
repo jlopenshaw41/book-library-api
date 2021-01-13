@@ -126,6 +126,8 @@ Remember we ran `node index.js` earlier, to start our server? Well this is doing
 
 `$ npm start`
 
+[n.b. don't forget to save and commit to git/push to GitHub regularly as we work through this project]
+
 7. Create a new folder called 'scripts' in your main book-library-API folder. Inside that scripts folder, create two new files - one called 'create-database.js' and one called 'drop-database.js.
 
 `$ mkdir scripts`
