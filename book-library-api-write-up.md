@@ -401,7 +401,8 @@ describe("/readers", () => {
 
 This code makes use of two bits of Mocha functionality - 'before', and 'beforeEach'. The 'before' block of code will automatically run before all of the tests in the file. This particular block of code creates a new instance of our database to perform tests on. Then, so that we start with a blank database for each individual test, the 'beforeEach' block of code clears out the database.
 
-4. Finally, we're going to add our first test. Paste the following code into readers.test.js, below everything else you've just added:
+4. Finally, we're going to add our first test. Paste the following code into readers.test.js, below everything else you've just added, but just inside the final closing `});`:
+
 ``` javascript
 describe("POST /readers", async () => {
   it("creates a new reader in the database", async () => {
@@ -433,7 +434,7 @@ So we've set up the test to check whether a new reader gets added to our databas
 
 Now we need to write the code that actually makes that happen. 
 
-First, we need to create a table in our database to hold info about readers. We do this using sequelize and something called models.
+First, we need to create a table in our database to hold info about readers. We do this using Sequelize and something called models.
 
 1. In your models folder, create a new file called 'reader.js':
 
@@ -452,9 +453,9 @@ module.exports = (connection, DataTypes) => {
   return ReaderModel;
 };
 ```
-As it says in their [documentation](https://sequelize.org/master/manual/model-basics.html), "models are the essence of Sequelize". Each model represents a table in our database - in this case, the 'readers' table. This code defines what our sequelize model, and therefore the corresponding table in our MySQL database, will look like. It is standard Sequelize syntax for defining a model. Above, we tell it that our readers table should be called 'readers' and have 'name' and 'email' columns (an 'id' column with a unique id number will also be automatically generated).
+As it says in their [documentation](https://sequelize.org/master/manual/model-basics.html), "models are the essence of Sequelize". Remember Sequelize sits between our Express app and our database and allows the two to communicate, even though they speak different languages (JavaScript and SQL). Each Sequelize model represents a table in our database - in this case, the 'readers' table. The code above defines what our Sequelize model, and therefore the corresponding table in our MySQL database, will look like. It is standard Sequelize syntax for defining a model. Above, we tell it that our readers table should be called 'readers' and have 'name' and 'email' columns (an 'id' column with a unique id number will also be automatically generated).
 
-3. Next, we need to add some code to our `models/index.js` file so that the reader model/table gets added to the database. First we import our reader model in, then after the existing setupDatabase code has run, we create a new variable called Reader and pull in that model function we just created, passing in our connection plus Sequelize, then the sync runs, before returning our Reader. Amend or paste the following code so your `models/index.js` file looks like this:
+3. Next, we need to add some code to our `models/index.js` file so that the reader model/table gets added to the database. First we import our reader model in, then after the existing `setupDatabase` function code, we create a new variable called 'Reader' and pull in that model function we just created, passing in our connection plus Sequelize, then the sync runs (another built-in function), before returning our Reader. Amend or paste the following code so your `models/index.js` file looks like this:
 
 ``` javascript
 const Sequelize = require('sequelize');
@@ -512,7 +513,7 @@ app.post("/readers", readerControllers.create);
 
 The `app.use...` line is a piece of code known as 'middleware'. It's a function pre-written for us by Express and it is necessary when making a POST request, which we're about to do. That POST request will include a body that consists of a JSON object. Behind the scenes, this middleware function essentially allows us make use of that JSON object.  
 
-The second line is our route handler. This is where the real API magic happens. It sets up our API to deal with incoming http requests (in this case, a POST request to create a new reader in our database). Eventually we'll have a route handler for all the different types of http requests that might come in. This is the core of our API. `app` is our good old Express app, which we are now configuring. `.post` is an Express method we can call on our app. There are methods for all the different types of http requests. It takes the url endpoint as a string, then a function, which will perform the actions it needs to take to create the new record (we'll write that function next). That function, known as a 'controller', does not live in this file. Rather, to keep our code more modular (and more reusable), we keep all our controller functions in a separate file and require them in. So, let's write that function...
+The second line is our route handler. This is where the real API magic happens. It sets up our API to deal with incoming http requests (in this case, a POST request to create a new reader in our database). Eventually we'll have a route handler for all the different types of http requests that might come in. This is the core of our API. `app` is our good old Express app, which we are now configuring. `.post` is an Express method we can call on our app. There are methods for all the different types of http requests. It takes the URL endpoint as a string, then a function, which will perform the actions it needs to take to create the new record (we'll write that function next). That function, known as a 'controller' or 'handler', does not live in this file. Rather, to keep our code more modular (and more reusable), we keep all our controller functions in a separate file and require them in. So, let's write that function...
 
 3. In the `controllers/readers.js` file, paste the following code:
 
@@ -525,7 +526,255 @@ const create = (req, res) => {
 
 module.exports = { create };
 ```
-?? As you should see by now, the first line requires in the model we created. Then, we create a new function, called 'create', which has two predefined parameters - 'req' and 'res', which are the incoming http request and the subsequent response we'll send back. This is standard Express syntax for controller functions. ?? (review this and check it's right)
 
+The first line requires in the Reader model (incidentally, we're requiring from `models/index.js` but you don't need to write the `index.js` bit - it automatically assumes that's what we mean). Then, we create a new function, called 'create', which has two predefined parameters - 'req' and 'res', which are the incoming http request and the subsequent response we'll send back. This is standard Express syntax for controller functions. Inside that function, we make use of Sequelize's built-in `create` method to create a new record in our Reader table, using the information that will be passed to it in the body of the request (that's what `req.body` refers to). Once it's been created successfully, we're given the new `reader` record, so we send back a 201 status, to indicate it's been a success and we also send back the new record itself, in JSON format. If we had a fancy front end attached, we'd be able to do something with that data and present it nicely.It's worth mentioning that, behind the scenes, all this is done using JavaScript Promises. The `create` method returns a promise, and we chain `.then` on to kick in once the promise has resolved (and the record has been created). You can read more about promises [here](https://www.w3schools.com/js/js_promise.asp), if you're not already familiar with them.
+
+4. In your terminal, run `npm test` and your test should now be passing! Hurrah! (If not, don't panic - read the error message carefully, check back through the instructions and your code. Use google if you need to).
+
+Now that we've written our first route handler, we're going to test it out using Postman. Postman is a handy tool that allows us to interact with our API and test it out during development.
+
+### Working with Postman
+
+If you haven't already, get [Postman](https://www.postman.com/), following the instructions on their website to set up an account and get started.
+
+1. Run `npm start` to start your app
+
+2. Open Postman, either in the browser or using the desktop app if you've downloaded it and click on 'Start with something new' the 'create a new request'. You should see 'GET' with a dropdown arrow and a box with 'Enter request URL'. Change 'GET' to 'POST' using the dropdown and enter the following in the request URL box:
+
+`localhost:4000/readers`
+
+Next, click on 'Body' just below the URL box and select the 'raw' radio button, then click the dropdown next to 'Text' and select 'JSON'. Like we did in our test, we're going to pass an object to our database, which will enable Sequelize to create a new entry. Paste the following into the Body box in Postman:
+
+```JSON
+{
+    "name": "Mia Corvere",
+    "email": "mia@redchurch.com"
+}
+```
+(Note the extra speech marks around `name` and `email`, because this is JSON)
+
+Hit 'Send' and you should receive a response, showing a status of '201 Created' and a body containing the new record, including an 'id' (which was automatically created for us).
+
+Hurrah! Try and create as many new records as you like, by changing the name and email in the request body and hitting 'Send' again. 
+
+### Creating 'GET', 'PATCH' and 'DELETE' requests
+
+Now we're going to go back to our code and repeat that process to write tests then create routes and controller functions for retrieving, updating and deleting artists (the remainder of our CRUD operations)
+
+### GET requests
+
+1. Paste the following test into your `readers.test.js` file, directly below your `describe("POST /artists...)` test but before the final closing `});`:
+
+```javascript
+describe("with readers in the database", () => {
+    let readers;
+    beforeEach((done) => {
+      Promise.all([
+        Reader.create({ name: "Mia Corvere", email: "mia@redchurch.com" }),
+        Reader.create({ name: "Bilbo Baggins", email: "bilbo@bagend.com" }),
+        Reader.create({ name: "Rand al'Thor", email: "rand@tworivers.com" }),
+      ]).then((documents) => {
+        readers = documents;
+        done();
+      });
+    });
+
+    describe("GET /readers", () => {
+      it("gets all reader records", (done) => {
+        request(app)
+          .get("/readers")
+          .then((res) => {
+            expect(res.status).to.equal(200);
+            expect(res.body.length).to.equal(3);
+            res.body.forEach((reader) => {
+              const expected = readers.find((a) => a.id === reader.id);
+              expect(reader.name).to.equal(expected.name);
+              expect(reader.email).to.equal(expected.email);
+            });
+            done();
+          })
+          .catch((error) => done(error));
+      });
+    });
+  });
+```
+
+What's happening here? The first `beforeEach` block is using promise syntax to pre-load three new readers in our test database. This sets us up to be able to test our GET functionality, by then retrieving all those new records from the test database. That's what the second `describe` block is doing - it fires up our app using supertest's `request` functionality, then it uses the built in `get` method to send GET request to the '/readers' endpoint. The response comes back with a status and a body containing all the reader records. The `forEach` block takes the original new records we created in the beforeEach block and compares them against the response body, to check that the name and email records match.  
+
+Run the test (`npm test`) and check that the new test is failing, as expected.
+
+2. Now we're going to write the code to make the test pass. In your `controller/readers.js` file, add another function (copy and paste from below) and be sure to add it to the `module.exports` object at the bottom:
+
+``` javascript
+const list = (req, res) => {
+  Reader.findAll().then((readers) => res.status(200).json(readers));
+};
+
+module.exports = { create, list };
+```
+
+This uses the built-in `findAll()` method to retrieve all the records in the Reader table. 
+
+2. Next, in `app.js`, add the following route:
+
+`app.get("/readers", readerControllers.list);`
+
+3. Head back over to Postman, change the request type to GET and hit send to the same URL. This time, you should get a '200 OK' status and an array of all the records in your Reader table. 
+
+That's it! You've just created a GET request. 
+
+### PATCH requests
+
+PATCH requests are used to update part of an existing record (as to PUT requests, which completely overwrite an existing record).
+
+1. Add the following test to `readers.test.js`, below the existing tests but before the final TWO `});` (we want it to be within the final brackets of the `describe("with readers in the database)` block that creates the 3 new reader records):
+
+```javascript
+
+describe("PATCH /readers/:id", () => {
+      it("updates reader name by id", (done) => {
+        const reader = readers[0];
+        request(app)
+          .patch(`/readers/${reader.id}`)
+          .send({ name: "Lyra Silvertongue" })
+          .then((res) => {
+            expect(res.status).to.equal(200);
+            Reader.findByPk(reader.id, { raw: true }).then((updatedReader) => {
+              expect(updatedReader.name).to.equal("Lyra Silvertongue");
+              done();
+            });
+          })
+          .catch((error) => done(error));
+      });
+
+      it("updates reader email by id", (done) => {
+        const reader = readers[0];
+        request(app)
+          .patch(`/readers/${reader.id}`)
+          .send({ email: "lyra@jordancollege.ac.uk" })
+          .then((res) => {
+            expect(res.status).to.equal(200);
+            Reader.findByPk(reader.id, { raw: true }).then((updatedReader) => {
+              expect(updatedReader.email).to.equal("lyra@jordancollege.ac.uk");
+              done();
+            });
+          });
+      });
+
+      it("returns a 404 if the reader does not exist", (done) => {
+        request(app)
+          .patch("/readers/345")
+          .send({ name: "Harry Potter" })
+          .then((res) => {
+            expect(res.status).to.equal(404);
+            expect(res.body.error).to.equal("The reader does not exist.");
+            done();
+          })
+          .catch((error) => done(error));
+      });
+    });
+```
+
+
+2. Add the following function to `controllers/readers.js`:
+
+``` javascript
+const update = (req, res) => {
+  const { id } = req.params;
+  Reader.update(req.body, { where: { id } }).then(([numOfRowsUpdated]) => {
+    if (numOfRowsUpdated === 0) {
+      res.status(404).json({ error: "The reader does not exist." });
+    } else {
+      res.status(200).json([numOfRowsUpdated]);
+    }
+  });
+};
+```
+
+And don't forget to add `update` to `module.exports` at the bottom.
+
+This one's a bit more complicated. Let's walk through it. First, when we make our PATCH request in a minute we're going to be sending it to '/readers/1', with 1 being the id of the reader record we want to update. The first line of code in the function above (`const { id } = req.params`) uses object destructuring to grab that number 1 from the request's URL (the 1 in the URL is known as a parameter hence 'params'). Next, we use the built-in `.update` method, to take the info from the request body, find the record where the id in the database matches the one we grabbed from the URL and update the relevant info in the database. Then we're sent back an array with the number of rows that have been updated (that's just how it works, rather than sending the record back as we've seen with other methods). If the number of rows updated comes back as 0, we know that that record didn't actually exist in the database in the first place, so we send an error status (404) and message. If it *doesn't* come back as zero, we know that the record has been successfully updated, so we return a success status (200) plus the number of rows updated.
+
+3. Now add the following code to `app.js`:
+
+`app.patch("/readers/:id", readerControllers.update);`
+
+4. Now test your new functionality in Postman - change the request type to 'PATCH', update the URL to `localhost:4000/readers/1` and include the following body:
+
+``` JSON
+{
+    "name": "Bilbo Baggins"
+}
+```
+
+You should get back a 200 OK status and an array with 1, indicating the number of rows updated. 
+
+Now if you do a GET request to /readers in Postman, you should see that the name value in your record with id 1 has been updated (but the email should still be the same). Go ahead and repeat the process to change the email, modifying the body accordingly. 
+
+### DELETE requests
+
+Last but not least, we're going to write the tests and code to perform DELETE operations on our database using our API
+
+1. Copy the following test into your test file, before the final two `});`:
+
+```javascript
+describe("DELETE /readers/:id", () => {
+      it("deletes reader record by id", (done) => {
+        const reader = readers[0];
+        request(app)
+          .delete(`/readers/${reader.id}`)
+          .then((res) => {
+            expect(res.status).to.equal(204);
+            Reader.findByPk(reader.id, { raw: true }).then((updatedReader) => {
+              expect(updatedReader).to.equal(null);
+              done();
+            });
+          })
+          .catch((error) => done(error));
+      });
+
+      it("returns a 404 if the reader does not exist", (done) => {
+        request(app)
+          .delete("/readers/345")
+          .then((res) => {
+            expect(res.status).to.equal(404);
+            expect(res.body.error).to.equal("The reader does not exist.");
+            done();
+          })
+          .catch((error) => done(error));
+      });
+    });
+```
+
+Run the tests and check those two fail, as expected.
+
+2. Add the following controller function to `readers.js`:
+
+``` javascript
+const deleteReader = (req, res) => {
+  const { id } = req.params;
+  Reader.destroy({ where: { id } }).then((numOfRowsDeleted) => {
+    if (numOfRowsDeleted === 0) {
+      res.status(404).json({ error: "The reader does not exist." });
+    } else {
+      res.status(204).json(numOfRowsDeleted);
+    }
+  });
+};
+```
+
+Don't forget to add it to `module.exports` too. 
+
+This function grabs the id again, as we did before. Then it uses the `destroy` method to delete the entry with the corresponding ID and returns the number of deleted records, or an error status and method if a reader with that id does not exist in the first place. 
+
+3. Finally, add the last route to your `app.js` file:
+
+`app.delete("/readers/:id", readerControllers.deleteReader);`
+
+Run your tests one last time to check they're all now passing! Then head over to Postman and have a go at sending POST, PATCH, GET and DELETE requests to the URL endpoints you've specified. 
+
+Well done! That's it! You have successfully created a REST API using Express and Sequelize to interact with a MySQL database and perform CRUD operations. Go celebrate :) 
+
+If you want to do more, use the new knowledge and skills you've just gained to add another table/model for storing book records, following the same process. 
 
 Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone)
