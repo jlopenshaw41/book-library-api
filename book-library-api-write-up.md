@@ -433,7 +433,7 @@ So we've set up the test to check whether a new reader gets added to our databas
 
 Now we need to write the code that actually makes that happen. 
 
-First, we need to create a table in our database to hold info about readers. We do  think using sequelize and something called models.
+First, we need to create a table in our database to hold info about readers. We do this using sequelize and something called models.
 
 1. In your models folder, create a new file called 'reader.js':
 
@@ -479,8 +479,53 @@ const setupDatabase = () => {
     };
 };
 
-module.exports = setupDatabase;
+module.exports = setupDatabase();
 ```
+
+Now, if you run `npm start` and have a look at MySQL Workbench, hit the little refresh icon and you should be able to see your book_library_mysql database listed under 'schemas' on the left, and if you expand it, you should see 'Readers' listed under tables. Right click on the database name and select 'Set as default schema'. This will allow you to query the database later. 
+
+### Adding functionality to our API to create new records in the database
+
+Next, we're going to write the code that actually creates new reader entries in the new database table when we send a http post request to our API.
+
+1. In the `src` folder, create a new folder called 'controllers' and create a new file called 'readers.js' inside that new folder
+
+`$ mkdir controllers`
+
+`$ cd controllers`
+
+`$ touch readers.js`
+
+2. Now, we're going to jump into our original `app.js` file and add our first route. At the top of the file, require in the file we just created using this line of code:
+
+``` javascript
+const readerControllers = require("./controllers/readers");
+``` 
+
+Next, paste the following code into `app.js`, just above the `module.exports...` line:
+
+```javascript
+app.use(express.json());
+
+app.post("/readers", readerControllers.create);
+```
+
+The `app.use...` line is a piece of code known as 'middleware'. It's a function pre-written for us by Express and it is necessary when making a POST request, which we're about to do. That POST request will include a body that consists of a JSON object. Behind the scenes, this middleware function essentially allows us make use of that JSON object.  
+
+The second line is our route handler. This is where the real API magic happens. It sets up our API to deal with incoming http requests (in this case, a POST request to create a new reader in our database). Eventually we'll have a route handler for all the different types of http requests that might come in. This is the core of our API. `app` is our good old Express app, which we are now configuring. `.post` is an Express method we can call on our app. There are methods for all the different types of http requests. It takes the url endpoint as a string, then a function, which will perform the actions it needs to take to create the new record (we'll write that function next). That function, known as a 'controller', does not live in this file. Rather, to keep our code more modular (and more reusable), we keep all our controller functions in a separate file and require them in. So, let's write that function...
+
+3. In the `controllers/readers.js` file, paste the following code:
+
+``` javascript
+const { Reader } = require("../models");
+
+const create = (req, res) => {
+  Reader.create(req.body).then((reader) => res.status(201).json(reader));
+};
+
+module.exports = { create };
+```
+?? As you should see by now, the first line requires in the model we created. Then, we create a new function, called 'create', which has two predefined parameters - 'req' and 'res', which are the incoming http request and the subsequent response we'll send back. This is standard Express syntax for controller functions. ?? (review this and check it's right)
 
 
 Big credit to Manchester Codes for teaching me how to do this in the first place - the basic instructions are theirs (and any mistakes in this post are mine alone)
