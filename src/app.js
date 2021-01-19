@@ -6,6 +6,8 @@ app.use(express.json());
 
 app.get("/readers", readerControllers.list);
 
+app.get("/readers/:id", readerControllers.getReaderById);
+
 app.post("/readers", readerControllers.create);
 
 app.patch("/readers/:id", readerControllers.update);

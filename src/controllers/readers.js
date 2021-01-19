@@ -8,6 +8,17 @@ const list = (req, res) => {
   Reader.findAll().then((readers) => res.status(200).json(readers));
 };
 
+const getReaderById = (req, res) => {
+  const { id } = req.params;
+  Reader.findByPk(id).then((reader) => {
+    if (!reader) {
+      res.status(404).json({ error: "The reader could not be found." });
+    } else {
+      res.status(200).json(reader);
+    }
+  });
+};
+
 const update = (req, res) => {
   const { id } = req.params;
   Reader.update(req.body, { where: { id } }).then(([numOfRowsUpdated]) => {
@@ -30,4 +41,4 @@ const deleteReader = (req, res) => {
   });
 };
 
-module.exports = { create, list, update, deleteReader };
+module.exports = { create, list, update, deleteReader, getReaderById };

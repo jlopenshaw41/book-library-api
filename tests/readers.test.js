@@ -70,6 +70,31 @@ describe("/readers", () => {
       });
     });
 
+    describe("GET /readers/:id", () => {
+      it("gets reader record by id", (done) => {
+        const reader = readers[0];
+        request(app)
+          .get(`/readers/${reader.id}`)
+          .then((res) => {
+            expect(res.status).to.equal(200);
+            expect(res.body.name).to.equal(reader.name);
+            expect(res.body.email).to.equal(reader.email);
+            done();
+          })
+          .catch((error) => done(error));
+      });
+      it("returns a 404 if the artist does not exist", (done) => {
+        request(app)
+          .get("/readers/12345")
+          .then((res) => {
+            expect(res.status).to.equal(404);
+            expect(res.body.error).to.equal("The reader could not be found.");
+            done();
+          })
+          .catch((error) => done(error));
+      });
+    });
+
     describe("PATCH /readers/:id", () => {
       it("updates reader name by id", (done) => {
         const reader = readers[0];
