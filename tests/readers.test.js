@@ -25,7 +25,7 @@ describe("/readers", () => {
       const response = await request(app).post("/readers").send({
         name: "Mia Corvere",
         email: "mia@redchurch.com",
-        password: "supersecret"
+        password: "supersecret",
       });
 
       await expect(response.status).to.equal(201);
@@ -40,15 +40,115 @@ describe("/readers", () => {
       expect(newReaderRecord.email).to.equal("mia@redchurch.com");
       expect(newReaderRecord.password).to.equal("supersecret");
     });
+
+    it("throws an error if name is null", async () => {
+      const response = await request(app).post("/readers").send({
+        name: null,
+        email: "some@email.com",
+        password: "supersecret",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if email is null", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "Aslan",
+        email: null,
+        password: "supersecret",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if password is null", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "Some Name",
+        email: "some@email.com",
+        password: null,
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if email is not in the correct format", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "Some Name",
+        email: "someemailcom",
+        password: "supersecret",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if name is an empty string", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "",
+        email: "some@email.com",
+        password: "supersecret",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if email is an empty string", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "Aslan",
+        email: "",
+        password: "supersecret",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if password is an empty string", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "Some Name",
+        email: "some@email.com",
+        password: "",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
+
+    it("throws an error if password has fewer than 8 characters", async () => {
+      const response = await request(app).post("/readers").send({
+        name: "Some Name",
+        email: "some@email.com",
+        password: "xyz",
+      });
+
+      await expect(response.status).to.equal(400);
+      expect(response.body.error).to.equal("SequelizeValidationError");
+    });
   });
 
   describe("with readers in the database", () => {
     let readers;
     beforeEach((done) => {
       Promise.all([
-        Reader.create({ name: "Mia Corvere", email: "mia@redchurch.com", password: "supersecret" }),
-        Reader.create({ name: "Bilbo Baggins", email: "bilbo@bagend.com", password: "password1" }),
-        Reader.create({ name: "Rand al'Thor", email: "rand@tworivers.com", password: "mypa55w0rd" }),
+        Reader.create({
+          name: "Mia Corvere",
+          email: "mia@redchurch.com",
+          password: "supersecret",
+        }),
+        Reader.create({
+          name: "Bilbo Baggins",
+          email: "bilbo@bagend.com",
+          password: "password1",
+        }),
+        Reader.create({
+          name: "Rand al'Thor",
+          email: "rand@tworivers.com",
+          password: "mypa55w0rd",
+        }),
       ]).then((documents) => {
         readers = documents;
         done();

@@ -49,6 +49,30 @@ describe("/books", () => {
     });
   });
 
+  it("throws an error if title is null", async () => {
+    const response = await request(app).post("/books").send({
+      title: null,
+      author: "J.K. Rowling",
+      genre: "Fantasy",
+      ISBN: "9780747532743"
+    });
+
+    await expect(response.status).to.equal(400);
+    expect(response.body.error).to.equal("SequelizeValidationError");
+  });
+
+  it("throws an error if author is null", async () => {
+    const response = await request(app).post("/books").send({
+      title: "Harry Potter and the Philosopher's Stone",
+      author: null,
+      genre: "Fantasy",
+      ISBN: "9780747532743"
+    });
+
+    await expect(response.status).to.equal(400);
+    expect(response.body.error).to.equal("SequelizeValidationError");
+  });
+
   describe("with books in the database", () => {
     let books;
     beforeEach((done) => {

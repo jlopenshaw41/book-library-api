@@ -1,7 +1,14 @@
 const { Reader } = require("../models");
 
 const create = (req, res) => {
-  Reader.create(req.body).then((reader) => res.status(201).json(reader));
+  Reader.create(req.body)
+    .then((reader) => res.status(201).json(reader))
+    .catch((error) =>
+      res.status(400).json({
+        error: error.name,
+        message: error.errors[0].message
+      })
+    );
 };
 
 const list = (req, res) => {

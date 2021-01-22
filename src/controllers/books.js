@@ -1,7 +1,14 @@
 const { Book } = require("../models");
 
 const create = (req, res) => {
-  Book.create(req.body).then((book) => res.status(201).json(book));
+  Book.create(req.body)
+    .then((book) => res.status(201).json(book))
+    .catch((error) =>
+      res.status(400).json({
+        error: error.name,
+        message: error.errors[0].message,
+      })
+    );
 };
 
 const list = (req, res) => {
