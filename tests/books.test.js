@@ -214,7 +214,7 @@ describe("/books", () => {
           .send({ title: "Harry Potter" })
           .then((res) => {
             expect(res.status).to.equal(404);
-            expect(res.body.error).to.equal("The book does not exist.");
+            expect(res.body.error).to.equal("The book could not be found.");
             done();
           })
           .catch((error) => done(error));
@@ -241,7 +241,7 @@ describe("/books", () => {
           .delete("/books/345")
           .then((res) => {
             expect(res.status).to.equal(404);
-            expect(res.body.error).to.equal("The book does not exist.");
+            expect(res.body.error).to.equal("The book could not be found.");
             done();
           })
           .catch((error) => done(error));

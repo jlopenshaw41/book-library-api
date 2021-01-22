@@ -1,51 +1,34 @@
-const { Reader } = require("../models");
+const {
+  createItem,
+  getAllItems,
+  getItemById,
+  updateItem,
+  deleteItem,
+} = require("./helpers");
 
 const create = (req, res) => {
-  Reader.create(req.body)
-    .then((reader) => res.status(201).json(reader))
-    .catch((error) =>
-      res.status(400).json({
-        error: error.name,
-        message: error.errors[0].message
-      })
-    );
+  createItem(res, "reader", req.body);
 };
 
 const list = (req, res) => {
-  Reader.findAll().then((readers) => res.status(200).json(readers));
+  getAllItems(res, "reader");
 };
 
 const getReaderById = (req, res) => {
   const { id } = req.params;
-  Reader.findByPk(id).then((reader) => {
-    if (!reader) {
-      res.status(404).json({ error: "The reader could not be found." });
-    } else {
-      res.status(200).json(reader);
-    }
-  });
+
+  getItemById(res, "reader", id);
 };
 
 const update = (req, res) => {
   const { id } = req.params;
-  Reader.update(req.body, { where: { id } }).then(([numOfRowsUpdated]) => {
-    if (numOfRowsUpdated === 0) {
-      res.status(404).json({ error: "The reader does not exist." });
-    } else {
-      res.status(200).json([numOfRowsUpdated]);
-    }
-  });
+
+  updateItem(res, "reader", req.body, id);
 };
 
 const deleteReader = (req, res) => {
   const { id } = req.params;
-  Reader.destroy({ where: { id } }).then((numOfRowsDeleted) => {
-    if (numOfRowsDeleted === 0) {
-      res.status(404).json({ error: "The reader does not exist." });
-    } else {
-      res.status(204).json(numOfRowsDeleted);
-    }
-  });
+  deleteItem(res, "reader", id);
 };
 
 module.exports = { create, list, update, deleteReader, getReaderById };
