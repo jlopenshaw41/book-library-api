@@ -11,11 +11,22 @@ const getModel = (model) => {
 
 const getError = (model) => ({ error: `The ${model} could not be found.` });
 
+const removePassword = (object) => {
+  if (object.hasOwnProperty("password")) {
+    delete object.password;
+  }
+
+  return object;
+};
+
 const createItem = (res, model, item) => {
   const Model = getModel(model);
 
   return Model.create(item)
-    .then((newItem) => res.status(201).json(newItem))
+    .then((newItem) => {
+      const itemWithoutPassword = removePassword(newItem.dataValues);
+      res.status(201).json(itemWithoutPassword);
+    })
     .catch((error) =>
       res.status(400).json({
         error: error.name,
@@ -27,7 +38,12 @@ const createItem = (res, model, item) => {
 const getAllItems = (res, model) => {
   const Model = getModel(model);
 
-  Model.findAll().then((items) => res.status(200).json(items));
+  return Model.findAll().then((items) => {
+    const itemsWithoutPassword = items.map((item) =>
+      removePassword(item.dataValues)
+    );
+    res.status(200).json(itemsWithoutPassword);
+  });
 };
 
 const getItemById = (res, model, id) => {
@@ -38,7 +54,8 @@ const getItemById = (res, model, id) => {
     if (!item) {
       res.status(404).json(error);
     } else {
-      res.status(200).json(item);
+      const itemWithoutPassword = removePassword(item.dataValues);
+      res.status(200).json(itemWithoutPassword);
     }
   });
 };
@@ -57,17 +74,23 @@ const updateItem = (res, model, item, id) => {
 };
 
 const deleteItem = (res, model, id) => {
-    const Model = getModel(model);
-    const error = getError(model);
+  const Model = getModel(model);
+  const error = getError(model);
 
-    Model.destroy({ where: { id } }).then((numOfRowsDeleted) => {
-        if (numOfRowsDeleted === 0) {
-          res.status(404).json(error);
-        } else {
-          res.status(204).json(numOfRowsDeleted);
-        }
-      });
+  Model.destroy({ where: { id } }).then((numOfRowsDeleted) => {
+    if (numOfRowsDeleted === 0) {
+      res.status(404).json(error);
+    } else {
+      res.status(204).json(numOfRowsDeleted);
+    }
+  });
+};
 
-}
-
-module.exports = { createItem, getAllItems, getItemById, updateItem, deleteItem };
+module.exports = {
+  createItem,
+  getAllItems,
+  getItemById,
+  updateItem,
+  deleteItem,
+  removePassword,
+};

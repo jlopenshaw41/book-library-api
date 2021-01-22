@@ -31,7 +31,7 @@ describe("/readers", () => {
       await expect(response.status).to.equal(201);
       expect(response.body.name).to.equal("Mia Corvere");
       expect(response.body.email).to.equal("mia@redchurch.com");
-      expect(response.body.password).to.equal("supersecret");
+      expect(response.body.password).to.equal(undefined);
 
       const newReaderRecord = await Reader.findByPk(response.body.id, {
         raw: true,
@@ -166,7 +166,7 @@ describe("/readers", () => {
               const expected = readers.find((a) => a.id === reader.id);
               expect(reader.name).to.equal(expected.name);
               expect(reader.email).to.equal(expected.email);
-              expect(reader.password).to.equal(expected.password);
+              expect(reader.password).to.equal(undefined);
             });
             done();
           })
@@ -183,7 +183,7 @@ describe("/readers", () => {
             expect(res.status).to.equal(200);
             expect(res.body.name).to.equal(reader.name);
             expect(res.body.email).to.equal(reader.email);
-            expect(res.body.password).to.equal(reader.password);
+            expect(res.body.password).to.equal(undefined);
             done();
           })
           .catch((error) => done(error));
